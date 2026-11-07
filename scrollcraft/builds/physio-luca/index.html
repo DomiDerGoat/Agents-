@@ -1,0 +1,725 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Physiotherapie Luca</title>
+<meta name="description" content="Physiotherapie in ruhiger Atmosphäre: Krankengymnastik, Manuelle Therapie, Lymphdrainage, Massage und mehr. Termin buchen bei Physiotherapie Luca.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='9' fill='%233F6B5E'/><path d='M11 9v14h10' stroke='%23FBF8F3' stroke-width='3' fill='none' stroke-linecap='round'/></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500&family=Geist:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --canvas: #F1ECE4;
+  --surface: #FBF8F3;
+  --ink: #2A2622;
+  --ink-soft: #625950;
+  --accent: #3F6B5E;
+  --accent-ink: #FBF8F3;
+  --display: "Outfit", system-ui, sans-serif;
+  --text: "Geist", system-ui, sans-serif;
+
+  /* world grade, rewritten by the script */
+  --wall-top: #EDE8DF;
+  --wall-bot: #E4DCCF;
+  --floor-top: #D9CDBB;
+  --floor-bot: #CDBFAA;
+  --light: #FFF9EE;
+  --light-a: .6;
+  --glow: .35;
+
+  --gutter: clamp(16px, 4vw, 56px);
+  --radius: 22px;
+}
+* { box-sizing: border-box; }
+html { background: var(--canvas); }
+body {
+  margin: 0; background: var(--canvas); color: var(--ink);
+  font: 400 1rem/1.6 var(--text);
+  -webkit-font-smoothing: antialiased;
+}
+a { color: inherit; }
+h1, h2, h3 { font-family: var(--display); font-weight: 400; letter-spacing: -0.02em; margin: 0; text-wrap: balance; }
+p { margin: 0; text-wrap: pretty; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+/* ---------- the world: one fixed room ---------- */
+.world { position: fixed; inset: 0; overflow: hidden; z-index: 0; pointer-events: none; }
+.w-cam { position: absolute; inset: -4%; transform-origin: 62% 70%; will-change: transform; }
+.w-wall { position: absolute; inset: 0; background: linear-gradient(180deg, var(--wall-top), var(--wall-bot) 76%); }
+.w-plaster { position: absolute; inset: 0; opacity: .5; mix-blend-mode: multiply; }
+.w-floor {
+  position: absolute; left: 0; right: 0; bottom: 0; height: 24%;
+  background: linear-gradient(180deg, var(--floor-top), var(--floor-bot));
+}
+.w-floor::before { /* skirting + soft contact shadow */
+  content: ""; position: absolute; left: 0; right: 0; top: -10px; height: 10px;
+  background: linear-gradient(180deg, rgba(60,45,30,0), rgba(60,45,30,.08));
+}
+.w-floor::after { /* boards */
+  content: ""; position: absolute; inset: 0; opacity: .18;
+  background: repeating-linear-gradient(90deg, transparent 0 14vw, rgba(70,55,40,.5) 14vw calc(14vw + 1px));
+  transform: perspective(400px) rotateX(48deg); transform-origin: top;
+}
+.w-light { position: absolute; left: 0; top: 6%; width: 46vw; height: 70%; will-change: transform, opacity; }
+.w-light svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.w-light .panes { filter: blur(16px); }
+.w-light .leaves { filter: blur(5px); transform-origin: 20% 0; animation: sway 9s ease-in-out infinite alternate; }
+.w-light canvas { position: absolute; inset: -10%; width: 120%; height: 120%; }
+.w-floorlight { position: absolute; left: 0; bottom: 3%; width: 60vw; height: 18%; filter: blur(22px); will-change: transform, opacity; }
+@keyframes sway { from { transform: rotate(-1.6deg) translateX(-4px); } to { transform: rotate(1.8deg) translateX(6px); } }
+
+.w-door {
+  position: absolute; bottom: 24%; left: 70%; width: clamp(160px, 19vw, 330px); aspect-ratio: 0.52;
+  transform-origin: 50% 100%; will-change: transform;
+}
+.w-door__frame {
+  position: absolute; inset: -14px -14px 0; border-radius: 999px 999px 0 0;
+  background: linear-gradient(180deg, #E9E1D4, #DDD2C2);
+  box-shadow: 0 30px 50px -30px rgba(60,40,20,.25);
+}
+.w-door__room {
+  position: absolute; inset: 0; border-radius: 999px 999px 0 0; overflow: hidden;
+  background: linear-gradient(180deg, #F3E1C6 0%, #E8C99E 70%, #D7B386 100%);
+  box-shadow: inset 14px 0 28px rgba(80,55,30,.18), inset -6px 0 18px rgba(80,55,30,.1);
+}
+.w-door__room::after { /* warm lamp in the next room */
+  content: ""; position: absolute; left: 50%; top: 38%; width: 160%; aspect-ratio: 1; translate: -50% -50%;
+  background: radial-gradient(closest-side, rgba(255,226,170,1), rgba(255,226,170,0));
+  opacity: var(--glow);
+}
+.w-plant { position: absolute; left: -6vw; bottom: -10vh; width: 40vw; max-width: 560px; filter: blur(9px); opacity: .55; will-change: transform; }
+.w-vignette { position: absolute; inset: 0; background: radial-gradient(120% 90% at 50% 45%, transparent 55%, rgba(60,40,20,.14)); }
+
+/* ---------- chrome ---------- */
+.bar {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 30;
+  display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  padding: 18px var(--gutter);
+}
+.mark { display: flex; align-items: center; gap: 10px; text-decoration: none; font-family: var(--display); font-size: 1.15rem; letter-spacing: -0.01em; }
+.mark__dot { width: 30px; height: 30px; border-radius: 9px; background: var(--accent); display: grid; place-items: center; }
+.mark small { display: block; font: 400 .74rem/1.2 var(--text); color: var(--ink-soft); letter-spacing: .02em; }
+.btn {
+  display: inline-flex; align-items: center; gap: 10px; min-height: 48px; padding: 0 22px;
+  border-radius: 999px; text-decoration: none; font: 500 .98rem/1 var(--text);
+  background: var(--accent); color: var(--accent-ink);
+  box-shadow: 0 10px 24px -12px rgba(40,70,60,.55);
+  transition: transform .25s cubic-bezier(.2,.7,.2,1), box-shadow .25s;
+}
+.btn:hover { transform: translateY(-2px); box-shadow: 0 16px 30px -14px rgba(40,70,60,.6); }
+.btn--ghost { background: rgba(251,248,243,.6); color: var(--ink); box-shadow: inset 0 0 0 1px rgba(42,38,34,.18); backdrop-filter: blur(8px); }
+.btn--ghost:hover { box-shadow: inset 0 0 0 1px rgba(42,38,34,.35); }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 8px; }
+
+/* the map: where in the room you are */
+.map { position: fixed; z-index: 30; left: var(--gutter); top: 50%; translate: 0 -50%; }
+.map ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; position: relative; }
+.map ol::before { content: ""; position: absolute; left: 5px; top: 14px; bottom: 14px; width: 1px; background: rgba(42,38,34,.18); }
+.map a {
+  display: flex; align-items: center; gap: 14px; text-decoration: none; padding: 6px 8px 6px 0;
+  font-size: .84rem; color: var(--ink-soft); transition: color .3s;
+}
+.map a::before {
+  content: ""; width: 11px; height: 11px; border-radius: 50%; flex: none; position: relative;
+  background: var(--canvas); box-shadow: inset 0 0 0 1px rgba(42,38,34,.35);
+  transition: background .3s, box-shadow .3s, transform .3s;
+}
+.map a[aria-current="true"] { color: var(--ink); }
+.map a[aria-current="true"]::before { background: var(--accent); box-shadow: 0 0 0 4px rgba(63,107,94,.16); transform: scale(1.1); }
+.map__here { /* sun marker travelling down the map */
+  position: absolute; left: 0; width: 11px; height: 11px; border-radius: 50%;
+  top: calc(14px + var(--pl, 0) * (100% - 28px)); translate: 0 -50%;
+  background: radial-gradient(circle, #F2C27B 30%, rgba(242,194,123,0) 72%); scale: 2.2; pointer-events: none;
+}
+
+/* ---------- copy layer ---------- */
+.copy { position: fixed; inset: 0; z-index: 10; pointer-events: none; }
+.win {
+  position: absolute; inset: 0; display: grid; align-items: center;
+  padding: 96px var(--gutter) 40px calc(var(--gutter) + 150px);
+  opacity: 0; visibility: hidden; will-change: opacity, transform;
+}
+.win.is-live { pointer-events: auto; }
+.panel {
+  background: rgba(251,248,243,.74); backdrop-filter: blur(14px) saturate(1.05); -webkit-backdrop-filter: blur(14px) saturate(1.05);
+  border-radius: var(--radius); padding: clamp(24px, 3.2vw, 44px);
+  box-shadow: 0 1px 0 rgba(255,255,255,.7) inset, 0 30px 60px -36px rgba(70,50,30,.35);
+}
+.lede { color: var(--ink-soft); font-size: 1.06rem; max-width: 46ch; }
+.kicker { font-size: .8rem; letter-spacing: .14em; text-transform: uppercase; color: var(--accent); font-weight: 500; }
+
+/* hero */
+.hero { justify-items: start; }
+.hero__inner { max-width: 680px; display: grid; gap: 22px; }
+.hero h1 { font-size: clamp(2.7rem, 6.4vw, 5.6rem); line-height: .98; font-weight: 300; letter-spacing: -0.035em; }
+.hero h1 em { font-style: normal; color: var(--accent); }
+.hero .row { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 10px; }
+
+/* treatments */
+.treat { grid-template-columns: minmax(0, 1fr); }
+.treat .panel { max-width: 760px; width: 100%; }
+.treat--trail { justify-items: end; }
+.treat h2 { font-size: clamp(1.9rem, 3.4vw, 3rem); line-height: 1.04; margin: 6px 0 22px; }
+.tlist { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 4px 34px; }
+.tlist li { padding: 14px 0; border-top: 1px solid rgba(42,38,34,.12); }
+.tlist h3 { font: 500 1.02rem/1.3 var(--text); letter-spacing: 0; }
+.tlist p { color: var(--ink-soft); font-size: .92rem; line-height: 1.5; margin-top: 3px; }
+
+/* contact */
+.contact { justify-items: center; }
+.contact .panel { max-width: 820px; width: 100%; display: grid; grid-template-columns: 1.1fr 1fr; gap: 36px; }
+.contact h2 { font-size: clamp(2rem, 3.6vw, 3.2rem); line-height: 1.02; margin-bottom: 14px; }
+.contact dl { margin: 0; display: grid; gap: 16px; }
+.contact dt { font-size: .78rem; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-soft); }
+.contact dd { margin: 2px 0 0; }
+.contact dd a { text-decoration-color: rgba(42,38,34,.3); text-underline-offset: 3px; }
+.hours { display: grid; grid-template-columns: auto 1fr; gap: 2px 18px; font-size: .95rem; }
+.contact .row { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 24px; }
+
+/* practice */
+.about .panel { max-width: 900px; display: grid; grid-template-columns: 240px 1fr; gap: 40px; align-items: center; }
+.about figure { margin: 0; }
+.portrait {
+  width: 100%; aspect-ratio: .82; border-radius: 999px 999px 18px 18px; overflow: hidden;
+  background: #E3D7C6; box-shadow: 0 24px 40px -26px rgba(60,40,20,.5);
+}
+.portrait img { width: 100%; height: 106%; object-fit: cover; object-position: 50% 0; filter: saturate(.82) sepia(.08); display: block; }
+.about figcaption { font-size: .86rem; color: var(--ink-soft); margin-top: 12px; }
+.about h2 { font-size: clamp(1.9rem, 3.3vw, 2.9rem); line-height: 1.04; margin-bottom: 18px; }
+.about p + p { margin-top: 12px; }
+.about .body { max-width: 52ch; }
+
+/* voices: the signature move */
+.voices { justify-items: center; align-content: center; gap: 18px; text-align: center; }
+.voices h2 { font-size: clamp(2rem, 3.8vw, 3.4rem); line-height: 1.02; }
+.stream { position: relative; width: min(680px, 100%); height: clamp(250px, 38vh, 330px); perspective: 1100px; }
+.rv {
+  position: absolute; inset: 0; margin: auto; height: fit-content; text-align: left;
+  background: var(--surface); border-radius: var(--radius); padding: clamp(24px, 3vw, 38px);
+  box-shadow: 0 40px 70px -34px rgba(70,45,20,.45), 0 1px 0 #fff inset;
+  opacity: 0; transform-style: preserve-3d;
+}
+.rv blockquote { margin: 0; font-family: var(--display); font-weight: 300; font-size: clamp(1.25rem, 2.1vw, 1.65rem); line-height: 1.32; letter-spacing: -0.01em; }
+.rv footer { margin-top: 18px; display: flex; justify-content: space-between; align-items: center; gap: 12px; font-size: .9rem; color: var(--ink-soft); }
+.rv .stars { color: #B98A3E; letter-spacing: 2px; font-size: .95rem; }
+.rv.is-in { animation: arrive 1.7s cubic-bezier(.16,.8,.24,1) forwards; }
+.rv.is-out { animation: pass 1.15s cubic-bezier(.55,0,.8,.4) forwards; }
+@keyframes arrive {
+  0%   { opacity: 0; filter: blur(10px); transform: translate3d(var(--fx), var(--fy), -1400px) rotateY(16deg) rotateX(6deg); }
+  35%  { opacity: .9; }
+  100% { opacity: 1; filter: blur(0); transform: none; }
+}
+@keyframes pass {
+  0%   { opacity: 1; filter: blur(0); transform: none; }
+  100% { opacity: 0; filter: blur(12px); transform: translate3d(18vw, 10vh, 520px) rotateY(-14deg); }
+}
+.stream__ctl { display: flex; align-items: center; gap: 10px; justify-content: center; }
+.icon-btn {
+  width: 44px; height: 44px; border-radius: 50%; border: 0; cursor: pointer; display: grid; place-items: center;
+  background: rgba(251,248,243,.7); color: var(--ink); box-shadow: inset 0 0 0 1px rgba(42,38,34,.18);
+}
+.icon-btn:hover { box-shadow: inset 0 0 0 1px rgba(42,38,34,.4); }
+.tick { width: 120px; height: 2px; background: rgba(42,38,34,.14); border-radius: 2px; overflow: hidden; }
+.tick i { display: block; height: 100%; background: var(--accent); transform-origin: left; transform: scaleX(0); }
+.tick.run i { animation: tick var(--dwell, 6s) linear forwards; }
+.voices.is-paused .tick i { animation-play-state: paused; }
+@keyframes tick { to { transform: scaleX(1); } }
+.note { font-size: .78rem; color: var(--ink-soft); }
+
+/* arrival */
+.finale { justify-items: center; align-content: end; padding-bottom: 7vh; text-align: center; }
+.finale__inner { display: grid; gap: 18px; justify-items: center; }
+.finale h2 { font-size: clamp(2.6rem, 6vw, 5.2rem); line-height: .98; font-weight: 300; letter-spacing: -0.035em; }
+.finale .row { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; margin-top: 6px; }
+.finale .lede { margin: 0 auto; }
+.foot { margin-top: 5vh; display: flex; gap: 22px; flex-wrap: wrap; justify-content: center; font-size: .82rem; color: var(--ink-soft); }
+.foot a { text-decoration: none; }
+.foot a:hover { text-decoration: underline; }
+.finale .halo { padding: 30px 34px; border-radius: 28px; background: radial-gradient(closest-side, rgba(251,248,243,.82), rgba(251,248,243,0)); }
+
+.spacer { height: 1000vh; }
+
+/* ---------- small screens ---------- */
+@media (max-width: 860px) {
+  .map { display: none; }
+  .win { padding: 84px 16px 24px; }
+  .tlist { grid-template-columns: 1fr; }
+  .tlist li { padding: 9px 0; }
+  .tlist p { font-size: .86rem; }
+  .treat h2 { margin-bottom: 12px; }
+  .contact .panel, .about .panel { grid-template-columns: 1fr; gap: 20px; }
+  .about .panel { grid-template-columns: 96px 1fr; align-items: start; }
+  .about h2 { grid-column: 1 / -1; }
+  .about .text { display: contents; }
+  .about .body { grid-column: 1 / -1; }
+  .about figure { grid-row: 1; grid-column: 1; }
+  .about figcaption { display: none; }
+  .about .who { grid-row: 1; grid-column: 2; align-self: center; }
+  .w-door { left: 64%; }
+  .w-light { width: 90vw; }
+  .bar .btn { min-height: 44px; padding: 0 16px; font-size: .92rem; }
+  .mark small { display: none; }
+  .panel { padding: 22px; }
+}
+@media (min-width: 861px) { .about .who { display: none; } }
+@media (max-height: 700px) and (min-width: 861px) { .tlist li { padding: 9px 0; } .tlist p { display: none; } }
+
+/* ---------- no script: plain document ---------- */
+html:not(.js) .world, html:not(.js) .spacer, html:not(.js) .map { display: none; }
+html:not(.js) .copy { position: static; }
+html:not(.js) .win { position: relative; opacity: 1; visibility: visible; min-height: 0; padding-top: 40px; }
+html:not(.js) .rv { position: relative; opacity: 1; margin-bottom: 14px; }
+html:not(.js) .stream { height: auto; }
+html:not(.js) .stream__ctl { display: none; }
+
+/* ---------- reduced motion ---------- */
+@media (prefers-reduced-motion: reduce) {
+  .w-light .leaves { animation: none; }
+  .rv.is-in { animation: fade-in .4s ease forwards; }
+  .rv.is-out { animation: fade-out .3s ease forwards; }
+  .btn { transition: none; }
+}
+@keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes fade-out { to { opacity: 0; } }
+</style>
+<script>document.documentElement.classList.add('js');</script>
+</head>
+<body>
+
+<!-- ============ THE ROOM ============ -->
+<div class="world" aria-hidden="true">
+  <div class="w-cam" id="cam">
+    <div class="w-wall"></div>
+    <svg class="w-plaster" width="100%" height="100%" preserveAspectRatio="none">
+      <filter id="plaster"><feTurbulence type="fractalNoise" baseFrequency=".012 .02" numOctaves="4" seed="7"/><feColorMatrix values="0 0 0 0 .55  0 0 0 0 .48  0 0 0 0 .4  0 0 0 -.9 .62"/></filter>
+      <rect width="100%" height="100%" filter="url(#plaster)"/>
+    </svg>
+
+    <div class="w-light" id="light">
+      <svg viewBox="0 0 600 700" preserveAspectRatio="none">
+        <g class="panes" transform="skewX(-14) translate(120 0)" fill="var(--light)">
+          <rect x="40" y="40" width="200" height="290" rx="6"/>
+          <rect x="262" y="40" width="200" height="290" rx="6"/>
+          <rect x="40" y="352" width="200" height="290" rx="6"/>
+          <rect x="262" y="352" width="200" height="290" rx="6"/>
+        </g>
+        <g class="leaves" fill="rgba(105,88,66,.28)">
+          <path d="M60 -20 C140 80 210 150 330 210 C380 236 430 250 470 300" stroke="rgba(105,88,66,.3)" stroke-width="7" fill="none"/>
+          <ellipse cx="150" cy="70"  rx="46" ry="17" transform="rotate(38 150 70)"/>
+          <ellipse cx="128" cy="118" rx="44" ry="16" transform="rotate(-24 128 118)"/>
+          <ellipse cx="226" cy="132" rx="50" ry="18" transform="rotate(30 226 132)"/>
+          <ellipse cx="214" cy="190" rx="46" ry="16" transform="rotate(-30 214 190)"/>
+          <ellipse cx="318" cy="186" rx="50" ry="18" transform="rotate(22 318 186)"/>
+          <ellipse cx="312" cy="250" rx="44" ry="16" transform="rotate(-38 312 250)"/>
+          <ellipse cx="410" cy="238" rx="46" ry="17" transform="rotate(30 410 238)"/>
+          <ellipse cx="420" cy="300" rx="40" ry="15" transform="rotate(-20 420 300)"/>
+        </g>
+      </svg>
+      <canvas id="motes"></canvas>
+    </div>
+
+    <div class="w-floor"></div>
+    <svg class="w-floorlight" id="floorlight" viewBox="0 0 600 120" preserveAspectRatio="none">
+      <g transform="skewX(-48) translate(110 0)" fill="var(--light)">
+        <rect x="20" y="10" width="170" height="100" rx="4"/><rect x="204" y="10" width="170" height="100" rx="4"/>
+      </g>
+    </svg>
+
+    <div class="w-door" id="door">
+      <div class="w-door__frame"></div>
+      <div class="w-door__room"></div>
+    </div>
+
+    <svg class="w-plant" id="plant" viewBox="0 0 400 520">
+      <g fill="#6F7F63">
+        <path d="M200 520 C190 400 160 300 90 220 C150 260 190 330 205 420 Z"/>
+        <path d="M205 520 C220 380 260 260 340 170 C290 250 250 340 225 450 Z"/>
+        <path d="M200 520 C200 360 200 220 230 80 C235 210 225 360 215 520 Z"/>
+        <path d="M195 520 C150 430 80 380 10 360 C90 350 160 400 210 480 Z"/>
+        <path d="M210 520 C260 450 320 420 395 420 C330 440 270 470 222 520 Z"/>
+      </g>
+    </svg>
+    <div class="w-vignette"></div>
+  </div>
+</div>
+
+<!-- ============ CHROME ============ -->
+<header class="bar">
+  <a class="mark" href="#start" data-go="start">
+    <span class="mark__dot" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 16 16"><path d="M5 2v11h7" stroke="#FBF8F3" stroke-width="2.2" fill="none" stroke-linecap="round"/></svg></span>
+    <span>Physiotherapie Luca<small>Praxis für Physiotherapie</small></span>
+  </a>
+  <a class="btn" href="mailto:praxis@physio-luca.de?subject=Terminanfrage">Termin buchen</a>
+</header>
+
+<nav class="map" aria-label="Bereiche der Seite">
+  <ol>
+    <li><a href="#start" data-go="start">Ankommen</a></li>
+    <li><a href="#behandlungen" data-go="behandlungen">Behandlungen</a></li>
+    <li><a href="#kontakt" data-go="kontakt">Kontakt</a></li>
+    <li><a href="#praxis" data-go="praxis">Die Praxis</a></li>
+    <li><a href="#stimmen" data-go="stimmen">Stimmen</a></li>
+    <li><a href="#termin" data-go="termin">Termin</a></li>
+    <li class="map__here" aria-hidden="true"></li>
+  </ol>
+</nav>
+
+<!-- ============ COPY, ARRIVING INSIDE THE ROOM ============ -->
+<main class="copy" id="copy">
+
+  <section class="win hero" id="start" data-win="hero" data-wp="start" aria-labelledby="h-start">
+    <div class="hero__inner">
+      <h1 id="h-start">Wieder gut <em>in Bewegung.</em></h1>
+      <p class="lede">Physiotherapie in ruhiger Atmosphäre. Wir nehmen uns Zeit, hören zu und behandeln, was Sie wirklich brauchen.</p>
+      <div class="row">
+        <a class="btn" href="mailto:praxis@physio-luca.de?subject=Terminanfrage">Termin buchen</a>
+        <a class="btn btn--ghost" href="#behandlungen" data-go="behandlungen">Behandlungen ansehen</a>
+      </div>
+    </div>
+  </section>
+
+  <section class="win treat" id="behandlungen" data-win=".105 .255" data-wp="behandlungen" aria-labelledby="h-t1">
+    <div class="panel">
+      <p class="kicker">Behandlungen</p>
+      <h2 id="h-t1">Mit den Händen und mit Bewegung.</h2>
+      <ul class="tlist">
+        <li><h3>Krankengymnastik</h3><p>Gezielte Übungen für Kraft, Beweglichkeit und Haltung.</p></li>
+        <li><h3>Manuelle Therapie</h3><p>Sanfte Techniken für Gelenke und Wirbelsäule.</p></li>
+        <li><h3>Krankengymnastik am Gerät</h3><p>Angeleitetes Aufbautraining, genau dosiert.</p></li>
+        <li><h3>Sportphysiotherapie</h3><p>Zurück in den Sport nach Verletzung oder Überlastung.</p></li>
+        <li><h3>Neurologische Behandlung</h3><p>Krankengymnastik nach Bobath und PNF.</p></li>
+        <li><h3>Hausbesuche</h3><p>Wenn der Weg in die Praxis gerade nicht geht.</p></li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="win treat treat--trail" data-win=".245 .39" data-wp="behandlungen" aria-labelledby="h-t2">
+    <div class="panel">
+      <h2 id="h-t2">Mit Wärme, Kälte und Ruhe.</h2>
+      <ul class="tlist">
+        <li><h3>Manuelle Lymphdrainage</h3><p>Entstauung nach Operationen und bei Schwellungen.</p></li>
+        <li><h3>Klassische Massage</h3><p>Löst Verspannungen und fördert die Durchblutung.</p></li>
+        <li><h3>Fango und Heißluft</h3><p>Tiefe Wärme, die Muskeln weich macht.</p></li>
+        <li><h3>Kältetherapie</h3><p>Lindert akute Schmerzen und Entzündungen.</p></li>
+        <li><h3>Elektrotherapie und Ultraschall</h3><p>Unterstützt Heilung und Schmerzlinderung.</p></li>
+        <li><h3>Kinesio-Taping</h3><p>Entlastet und stützt im Alltag und beim Sport.</p></li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="win contact" id="kontakt" data-win=".405 .525" data-wp="kontakt" aria-labelledby="h-k">
+    <div class="panel">
+      <div>
+        <p class="kicker">Kontakt</p>
+        <h2 id="h-k" style="margin-top:6px">Sprechen Sie mit uns.</h2>
+        <p class="lede">Ob Rezept, Frage oder erster Termin: Rufen Sie an oder schreiben Sie uns. Wir finden gemeinsam den passenden Weg.</p>
+        <div class="row">
+          <a class="btn" href="mailto:praxis@physio-luca.de?subject=Terminanfrage">Termin buchen</a>
+          <a class="btn btn--ghost" href="tel:+491234567890">Anrufen</a>
+        </div>
+      </div>
+      <dl>
+        <div><dt>Adresse</dt><dd>Musterstraße 12<br>12345 Musterstadt</dd></div>
+        <div><dt>Telefon</dt><dd><a href="tel:+491234567890">01234 567890</a></dd></div>
+        <div><dt>E-Mail</dt><dd><a href="mailto:praxis@physio-luca.de">praxis@physio-luca.de</a></dd></div>
+        <div><dt>Sprechzeiten</dt><dd class="hours"><span>Mo bis Do</span><span>8 bis 19 Uhr</span><span>Fr</span><span>8 bis 15 Uhr</span></dd></div>
+      </dl>
+    </div>
+  </section>
+
+  <section class="win about" id="praxis" data-win=".54 .66" data-wp="praxis" aria-labelledby="h-p">
+    <div class="panel">
+      <figure>
+        <div class="portrait"><img src="assets/luca.webp" width="444" height="504" alt="Porträt von Luca, Inhaber der Praxis"></div>
+        <figcaption>Luca, Physiotherapeut und Inhaber</figcaption>
+      </figure>
+      <p class="who"><strong>Luca</strong><br><span style="color:var(--ink-soft);font-size:.9rem">Physiotherapeut und Inhaber</span></p>
+      <div class="text">
+        <h2 id="h-p">Eine Praxis, in der man sich kennt.</h2>
+        <div class="body">
+          <p>Jede Behandlung beginnt bei uns mit einem Gespräch. Wir schauen genau hin, erklären, was wir finden, und planen die Therapie gemeinsam mit Ihnen. So wissen Sie immer, was passiert und warum.</p>
+          <p>Die Praxis ist hell, ruhig und bewusst klein gehalten. Hier wartet niemand im Gedränge, und man wird mit Namen begrüßt.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="win voices" id="stimmen" data-win=".69 .9" data-wp="stimmen" aria-labelledby="h-s">
+    <p class="kicker">Stimmen aus der Praxis</p>
+    <h2 id="h-s">Was unsere Patienten sagen.</h2>
+    <div class="stream" id="stream" aria-roledescription="Karussell" aria-label="Bewertungen">
+      <article class="rv"><blockquote>„Nach dem Bandscheibenvorfall hatte ich Angst vor jeder Bewegung. Hier wurde mir erklärt, was los ist, und Schritt für Schritt ging es wieder.“</blockquote><footer><span>M. K. · Manuelle Therapie</span><span class="stars" aria-label="5 von 5 Sternen">★★★★★</span></footer></article>
+      <article class="rv"><blockquote>„Ruhige Praxis, keine Hektik. Man fühlt sich wirklich gesehen und nicht wie eine Nummer.“</blockquote><footer><span>S. B. · Krankengymnastik</span><span class="stars" aria-label="5 von 5 Sternen">★★★★★</span></footer></article>
+      <article class="rv"><blockquote>„Nach dem Kreuzbandriss stehe ich wieder auf dem Platz. Ehrliche Einschätzung, gutes Training, viel Geduld.“</blockquote><footer><span>J. A. · Sportphysiotherapie</span><span class="stars" aria-label="5 von 5 Sternen">★★★★★</span></footer></article>
+      <article class="rv"><blockquote>„Die Lymphdrainage ist für mich jede Woche eine kleine Pause vom Alltag. Sehr angenehme Atmosphäre.“</blockquote><footer><span>R. W. · Lymphdrainage</span><span class="stars" aria-label="5 von 5 Sternen">★★★★★</span></footer></article>
+      <article class="rv"><blockquote>„Kommt auch zu meiner Mutter nach Hause. Freundlich, geduldig und immer pünktlich.“</blockquote><footer><span>C. D. · Hausbesuch</span><span class="stars" aria-label="5 von 5 Sternen">★★★★★</span></footer></article>
+      <article class="rv"><blockquote>„Endlich jemand, der sich die ganze Haltung ansieht und nicht nur die Stelle, die wehtut.“</blockquote><footer><span>H. L. · Krankengymnastik</span><span class="stars" aria-label="5 von 5 Sternen">★★★★★</span></footer></article>
+    </div>
+    <div class="stream__ctl">
+      <button class="icon-btn" type="button" id="rv-prev" aria-label="Vorherige Bewertung"><svg width="16" height="16" viewBox="0 0 16 16"><path d="M10 3 5 8l5 5" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+      <div class="tick" id="tick" aria-hidden="true"><i></i></div>
+      <button class="icon-btn" type="button" id="rv-pause" aria-label="Automatischen Wechsel anhalten"><svg width="16" height="16" viewBox="0 0 16 16" id="rv-pause-ico"><path d="M5 3v10M11 3v10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
+      <button class="icon-btn" type="button" id="rv-next" aria-label="Nächste Bewertung"><svg width="16" height="16" viewBox="0 0 16 16"><path d="m6 3 5 5-5 5" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+    </div>
+    <p class="note">Beispieltexte. Hier erscheinen Ihre echten Bewertungen.</p>
+  </section>
+
+  <section class="win finale" id="termin" data-win="finale .91" data-wp="termin" aria-labelledby="h-f">
+    <div class="finale__inner halo">
+      <h2 id="h-f">Die Tür steht offen.</h2>
+      <p class="lede">Buchen Sie Ihren Termin oder rufen Sie uns an. Wir beraten Sie gern, auch zu Rezept und Kostenübernahme.</p>
+      <div class="row">
+        <a class="btn" href="mailto:praxis@physio-luca.de?subject=Terminanfrage">Termin buchen</a>
+        <a class="btn btn--ghost" href="tel:+491234567890">01234 567890</a>
+      </div>
+      <footer class="foot">
+        <span>© Physiotherapie Luca</span>
+        <span>Musterstraße 12, 12345 Musterstadt</span>
+        <a href="#impressum">Impressum</a>
+        <a href="#datenschutz">Datenschutz</a>
+      </footer>
+    </div>
+  </section>
+</main>
+
+<div class="spacer" id="spacer" aria-hidden="true"></div>
+
+<script>
+(() => {
+  const root = document.documentElement;
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const clamp = (v, a = 0, b = 1) => Math.min(b, Math.max(a, v));
+  const mix = (a, b, t) => a + (b - a) * t;
+  const ease = t => t * t * (3 - 2 * t);
+
+  /* ---------- track ---------- */
+  const TRACK_VH = 9.5;            // scroll length, in viewport heights
+  const RAMP = 0.022;              // fade ramp, in track fraction
+  const spacer = document.getElementById('spacer');
+  let vh = innerHeight, travel = 1;
+  function layout() {
+    vh = innerHeight || document.documentElement.clientHeight || 800;
+    spacer.style.height = Math.round((TRACK_VH + 1) * vh) + 'px';
+    travel = Math.max(1, spacer.offsetHeight - vh);
+  }
+  layout();
+  addEventListener('resize', layout);
+  addEventListener('load', layout);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(layout);
+
+  /* ---------- copy windows ---------- */
+  const wins = [...document.querySelectorAll('[data-win]')].map(el => {
+    const parts = el.dataset.win.split(/\s+/);
+    if (parts[0] === 'hero') return { el, kind: 'hero', a: 0, b: 0.085 };
+    if (parts[0] === 'finale') return { el, kind: 'finale', a: +parts[1], b: 1 };
+    return { el, kind: 'span', a: +parts[0], b: +parts[1] };
+  });
+  function windowOpacity(w, p) {
+    if (w.kind === 'hero') return clamp((w.b - p) / RAMP);
+    if (w.kind === 'finale') return clamp((p - w.a) / RAMP);
+    return Math.min(clamp((p - w.a) / RAMP), clamp((w.b - p) / RAMP));
+  }
+  function centreOf(id) {
+    const w = wins.find(w => w.el.id === id);
+    if (!w) return 0;
+    if (w.kind === 'hero') return 0;
+    if (w.kind === 'finale') return 1;
+    return (w.a + w.b) / 2;
+  }
+
+  /* ---------- map ---------- */
+  const mapLinks = [...document.querySelectorAll('.map a')];
+  const order = mapLinks.map(a => a.dataset.go);
+  document.querySelectorAll('[data-go]').forEach(a => a.addEventListener('click', e => {
+    e.preventDefault();
+    const id = a.dataset.go;
+    scrollTo({ top: centreOf(id) * travel, behavior: reduce ? 'auto' : 'smooth' });
+    const target = document.getElementById(id);
+    setTimeout(() => { const f = target && target.querySelector('h1, h2'); if (f) { f.tabIndex = -1; f.focus({ preventScroll: true }); } }, reduce ? 50 : 900);
+  }));
+
+  /* ---------- the room's day: time-of-day grade ---------- */
+  const hex = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16));
+  const toHex = c => '#' + c.map(v => Math.round(v).toString(16).padStart(2, '0')).join('');
+  const day = [ // p, wallTop, wallBot, floorTop, floorBot, light, lightA, glow
+    [0.00, '#EBE8E2', '#E1DCD3', '#D6CDBF', '#C9BEAD', '#FFFBF3', .55, .25],
+    [0.38, '#F1ECE3', '#E7DFD1', '#DCCFBB', '#CFBFA8', '#FFF7E8', .78, .32],
+    [0.69, '#F4EBDD', '#EADCC6', '#DFCDB2', '#D0BB9C', '#FFEFD5', .88, .5],
+    [0.90, '#F2E4CF', '#E7D2B5', '#DBC4A4', '#CCB28F', '#FFE5BF', .82, .78],
+    [1.00, '#EEDDC6', '#E2CBAC', '#D6BD9C', '#C7AB88', '#FFDDB0', .7, 1],
+  ];
+  let lightA = .6;
+  function grade(p) {
+    let i = 0; while (i < day.length - 2 && p > day[i + 1][0]) i++;
+    const A = day[i], B = day[i + 1], t = ease(clamp((p - A[0]) / (B[0] - A[0])));
+    const keys = ['--wall-top', '--wall-bot', '--floor-top', '--floor-bot', '--light'];
+    keys.forEach((k, j) => {
+      const a = hex(A[j + 1]), b = hex(B[j + 1]);
+      root.style.setProperty(k, toHex(a.map((v, n) => mix(v, b[n], t))));
+    });
+    lightA = mix(A[6], B[6], t);
+    root.style.setProperty('--light-a', lightA.toFixed(3));
+    root.style.setProperty('--glow', mix(A[7], B[7], t).toFixed(3));
+  }
+
+  /* ---------- camera + planes ---------- */
+  const cam = document.getElementById('cam');
+  const light = document.getElementById('light');
+  const floorlight = document.getElementById('floorlight');
+  const door = document.getElementById('door');
+  const plant = document.getElementById('plant');
+  const narrow = () => innerWidth < 861;
+  function world(p) {
+    // a slow dolly toward the doorway; the doorway drifts to centre for the arrival
+    const arrive = ease(clamp((p - 0.84) / 0.16));
+    const camS = 1 + p * 0.06 + arrive * 0.05;
+    cam.style.transform = `scale(${camS.toFixed(4)}) translate3d(${(-p * 1.2).toFixed(3)}vw, ${(p * 0.6).toFixed(3)}vh, 0)`;
+    // the sun travels: light patch crosses the wall left to right and stretches
+    const lx = mix(narrow() ? -30 : -8, narrow() ? 40 : 46, p);
+    const ly = mix(-4, 6, p);
+    light.style.transform = `translate3d(${lx.toFixed(2)}vw, ${ly.toFixed(2)}vh, 0) skewX(${mix(4, -10, p).toFixed(2)}deg) scaleY(${mix(1, 1.08, p).toFixed(3)})`;
+    light.style.opacity = lightA.toFixed(3);
+    floorlight.style.transform = `translate3d(${mix(-10, 30, p).toFixed(2)}vw, 0, 0)`;
+    floorlight.style.opacity = (lightA * 0.85).toFixed(3);
+    // doorway: right of frame, comes to the middle and grows on arrival
+    const dx = mix(0, narrow() ? -14 : -20, arrive);
+    const ds = 1 + p * 0.06 + arrive * (narrow() ? 0.35 : 0.42);
+    door.style.transform = `translate3d(${dx.toFixed(2)}vw, 0, 0) scale(${ds.toFixed(4)})`;
+    // foreground plant: nearest plane, moves most
+    plant.style.transform = `translate3d(${(-p * 10).toFixed(2)}vw, ${(p * 14).toFixed(2)}vh, 0) rotate(${(p * -4).toFixed(2)}deg)`;
+  }
+
+  /* ---------- dust in the light ---------- */
+  const cv = document.getElementById('motes');
+  const ctx = cv.getContext('2d');
+  const motes = Array.from({ length: 46 }, () => ({ x: Math.random(), y: Math.random(), r: .6 + Math.random() * 1.8, s: .002 + Math.random() * .006, ph: Math.random() * 6.28 }));
+  function sizeMotes() { const r = cv.getBoundingClientRect(); cv.width = r.width; cv.height = r.height; }
+  sizeMotes(); addEventListener('resize', sizeMotes);
+  function drawMotes(t) {
+    ctx.clearRect(0, 0, cv.width, cv.height);
+    for (const m of motes) {
+      m.y -= m.s * 0.12; if (m.y < -0.05) { m.y = 1.05; m.x = Math.random(); }
+      const x = (m.x + Math.sin(t / 3000 + m.ph) * 0.02) * cv.width, y = m.y * cv.height;
+      ctx.globalAlpha = 0.25 + 0.35 * (0.5 + 0.5 * Math.sin(t / 900 + m.ph));
+      ctx.fillStyle = '#FFFDF6'; ctx.beginPath(); ctx.arc(x, y, m.r, 0, 6.283); ctx.fill();
+    }
+  }
+
+  /* ---------- the frame loop ---------- */
+  let target = 0, cur = 0, last = performance.now(), currentWp = '';
+  const readScroll = () => { target = clamp(scrollY / travel); };
+  addEventListener('scroll', readScroll, { passive: true });
+  readScroll(); cur = target;
+
+  function paint(p) {
+    grade(p);
+    world(p);
+    root.style.setProperty('--pl', p.toFixed(4));
+    let best = null, bestO = 0;
+    for (const w of wins) {
+      const o = windowOpacity(w, p);
+      const local = clamp((p - w.a) / Math.max(0.001, w.b - w.a));
+      const ty = reduce ? 0 : (w.kind === 'hero' ? -local * 2 : (0.5 - local) * 4) * 0.6; // capped well inside 4vh
+      w.el.style.opacity = o.toFixed(3);
+      w.el.style.transform = `translate3d(0, ${ty.toFixed(3)}vh, 0)`;
+      w.el.style.visibility = o > 0.01 ? 'visible' : 'hidden';
+      w.el.classList.toggle('is-live', o > 0.5);
+      w.el.inert = o <= 0.5;
+      if (o > bestO) { bestO = o; best = w; }
+    }
+    const wp = best ? best.el.dataset.wp : currentWp;
+    if (wp && wp !== currentWp) {
+      currentWp = wp;
+      mapLinks.forEach(a => a.setAttribute('aria-current', String(a.dataset.go === wp)));
+      voices.setActive(wp === 'stimmen');
+    }
+  }
+
+  function frame(now) {
+    const dt = Math.min(64, now - last); last = now;
+    const k = reduce ? 1 : 1 - Math.pow(1 - 0.12, dt / 16.67);
+    cur += (target - cur) * k;
+    if (Math.abs(target - cur) < 0.00005) cur = target;
+    paint(cur);
+    if (!reduce) drawMotes(now);
+    requestAnimationFrame(frame);
+  }
+
+  /* ---------- the signature: voices fly out of the sunlight ---------- */
+  const voices = (() => {
+    const section = document.getElementById('stimmen');
+    const stream = document.getElementById('stream');
+    const cards = [...stream.querySelectorAll('.rv')];
+    const tick = document.getElementById('tick');
+    const pauseBtn = document.getElementById('rv-pause');
+    const DWELL = 6200;
+    let i = -1, timer = null, active = false, userPaused = false, hover = false, shown = false;
+
+    cards.forEach((c, n) => { c.setAttribute('aria-roledescription', 'Bewertung'); c.setAttribute('aria-label', `${n + 1} von ${cards.length}`); });
+
+    function origin() {
+      // the card starts where the light falls on the wall
+      const l = light.getBoundingClientRect(), s = stream.getBoundingClientRect();
+      const fx = (l.left + l.width * 0.45) - (s.left + s.width / 2);
+      const fy = (l.top + l.height * 0.35) - (s.top + s.height / 2);
+      return [fx * 1.6, fy * 1.6];
+    }
+    function show(n, dir = 1) {
+      const prev = cards[i];
+      i = (n + cards.length) % cards.length;
+      const next = cards[i];
+      if (prev && prev !== next) { prev.classList.remove('is-in'); void prev.offsetWidth; prev.classList.add('is-out'); prev.setAttribute('aria-hidden', 'true'); }
+      const [fx, fy] = origin();
+      next.style.setProperty('--fx', (dir > 0 ? fx : -fx * 0.6).toFixed(0) + 'px');
+      next.style.setProperty('--fy', fy.toFixed(0) + 'px');
+      next.classList.remove('is-out'); void next.offsetWidth; next.classList.add('is-in');
+      next.removeAttribute('aria-hidden');
+      cards.forEach(c => { if (c !== next && c !== prev) { c.classList.remove('is-in', 'is-out'); c.setAttribute('aria-hidden', 'true'); } });
+      restartTick();
+    }
+    function restartTick() {
+      tick.classList.remove('run'); void tick.offsetWidth;
+      if (running()) tick.classList.add('run');
+    }
+    const running = () => active && !userPaused && !hover;
+    function schedule() {
+      clearTimeout(timer);
+      if (running()) timer = setTimeout(() => { show(i + 1); schedule(); }, DWELL);
+    }
+    function sync() {
+      section.classList.toggle('is-paused', !running());
+      if (running() && !tick.classList.contains('run')) restartTick();
+      schedule();
+    }
+    tick.style.setProperty('--dwell', DWELL + 'ms');
+    document.getElementById('rv-next').addEventListener('click', () => { show(i + 1); schedule(); });
+    document.getElementById('rv-prev').addEventListener('click', () => { show(i - 1, -1); schedule(); });
+    pauseBtn.addEventListener('click', () => {
+      userPaused = !userPaused;
+      pauseBtn.setAttribute('aria-label', userPaused ? 'Automatischen Wechsel fortsetzen' : 'Automatischen Wechsel anhalten');
+      document.getElementById('rv-pause-ico').innerHTML = userPaused
+        ? '<path d="M5 3l8 5-8 5z" fill="currentColor"/>'
+        : '<path d="M5 3v10M11 3v10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>';
+      sync();
+    });
+    stream.addEventListener('pointerenter', () => { hover = true; sync(); });
+    stream.addEventListener('pointerleave', () => { hover = false; sync(); });
+    section.addEventListener('focusin', () => { hover = true; sync(); });
+    section.addEventListener('focusout', () => { hover = false; sync(); });
+    return {
+      setActive(on) {
+        active = on;
+        if (on && !shown) { shown = true; show(0); }
+        sync();
+      },
+    };
+  })();
+
+  paint(cur);
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
