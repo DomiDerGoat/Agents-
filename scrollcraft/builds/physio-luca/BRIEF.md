@@ -17,7 +17,7 @@ Ein Vergleichsangebot lag nicht vor. Das Leistungsspektrum ist deshalb das übli
 5. **Was keine andere Seite macht:** „Dynamisches Design mit Animationen von den Bewertungen, die vorbeifliegen, und immer eine neue wird angezeigt.“
 6. **Ästhetik:** „Eher minimalistisch. Einfach gestaltet.“ → edel und minimalistisch, warm statt kühl.
 7. **Welt:** „Durchgehende Welt.“
-8. **Material:** „Nichts außer ein Bild vom CEO.“ Das Foto ist ein Spiegel-Selfie mit Rolex-Logo und Goldkette. Verwendet wird nur ein enger Ausschnitt des Gesichts. **Ein ruhiges Porträt wird empfohlen.**
+8. **Material:** „Nichts außer ein Bild vom CEO.“ Das Foto ist ein Spiegel-Selfie mit Rolex-Logo und Goldkette. Auf Wunsch des Inhabers wird das Foto vollständig verwendet.
 
 **Glauben am Ende:** „…sich gut beraten und sicher in der Praxis fühlen.“
 **Aktion:** „Termin buchen.“
